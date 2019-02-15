@@ -6,9 +6,11 @@
   "dependencies": {
     "typescript": "^3.3.3"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/node": "^11.9.3"
+  },
   "scripts": {
-    "start": "tsc -w -p .",
+    "start": "tsc --watch --project .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Tom",
