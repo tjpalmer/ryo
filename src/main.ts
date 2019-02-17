@@ -36,8 +36,12 @@ function main() {
     let walker = new Walker({program});
     walker.program = program;
     if (!file.isDeclarationFile) {
-      let def = service.getDefinitionAtPosition(file.fileName, 39);
+      let def;
+      for (let i = 0; i < 1e0; ++i) {
+        def = service.getDefinitionAtPosition(file.fileName, 39);
+      }
       console.log('def', def);
+      console.log(file);
       throw 'hi';
       walker.walk(file);
     }
