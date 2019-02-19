@@ -31,11 +31,12 @@ function main() {
   //   rootNames: process.argv.slice(2),
   // });
   let scriptName = process.argv[2];
-  console.log(scriptName);
+  // console.log(scriptName);
   let code = fs.readFileSync(scriptName).toString();
-  console.log(code);
+  // console.log(code);
   let scriptNode =
     ts.createSourceFile(scriptName, code, ts.ScriptTarget.ES2015);
+  // console.log(scriptNode.text);
   let walker = new Walker({});
   walker.walk(scriptNode);
 
@@ -87,7 +88,7 @@ class Walker implements WalkerVars {
 
   // program: ts.Program;
 
-  walk(node: ts.Node) {
+  walk(node: ts.Node, asType = false) {
     // let {checker} = this;
     let walk = (node: ts.Node) => this.walk(node);
     switch (node.kind) {
@@ -114,25 +115,32 @@ class Walker implements WalkerVars {
       case ts.SyntaxKind.FunctionDeclaration: {
         let func = node as ts.FunctionDeclaration;
         let name = func.name && func.name.escapedText;
-        let typeName = '?';
-        if (func.type) {
-          typeName = func.type.getText();
-        } else {
-          // let signature = checker.getSignatureFromDeclaration(func);
-          // console.log(signature);
-          // if (signature) {
-          //   console.log('hi', checker.signatureToString(signature));
-          //   // throw 'hi';
-          //   let returnType = signature.getReturnType();
-          //   if (returnType.flags & ts.TypeFlags.Boolean) {
-          //     typeName = 'bool';
-          //   } else if (returnType.flags & ts.TypeFlags.VoidLike) {
-          //     typeName = 'void';
-          //   }
-          // }
-        }
+        // let typeName = '?';
+        // if (func.type) {
+        //   // TODO Walk type instead.
+        //   // console.log(func.type);
+        //   typeName = (func.type as any).typeName.escapedText;
+        // } else {
+        //   // let signature = checker.getSignatureFromDeclaration(func);
+        //   // console.log(signature);
+        //   // if (signature) {
+        //   //   console.log('hi', checker.signatureToString(signature));
+        //   //   // throw 'hi';
+        //   //   let returnType = signature.getReturnType();
+        //   //   if (returnType.flags & ts.TypeFlags.Boolean) {
+        //   //     typeName = 'bool';
+        //   //   } else if (returnType.flags & ts.TypeFlags.VoidLike) {
+        //   //     typeName = 'void';
+        //   //   }
+        //   // }
+        // }
         // console.log(node);
-        write(`${typeName} ${name}() {\n`);
+        if (func.type) {
+          walk(func.type);
+        } else {
+          write('?');
+        }
+        write(` ${name}() {\n`);
         if (func.body) {
           this.indented(() => {
             func.body!.statements.forEach(walk);
@@ -146,7 +154,7 @@ class Walker implements WalkerVars {
         // console.log('id symbol', checker.getSymbolAtLocation(node));
         // this.program.getSemanticDiagnostics()
         // console.log('id type', checker.getTypeAtLocation(node));
-        write(`${id.text}`);
+        write(id.text);
         break;
       }
       case ts.SyntaxKind.NumericLiteral: {
@@ -184,12 +192,23 @@ class Walker implements WalkerVars {
       }
       case ts.SyntaxKind.TypeAliasDeclaration: {
         let decl = node as ts.TypeAliasDeclaration;
-        let typeName = decl.type.getText();
+        // TODO Walk type instead.
+        let typeName = (decl.type as any).typeName.escapedText;
         if (typeName == 'number') {
           typeName = 'double';
         }
         this.indent();
-        write(`using ${decl.name.text} = ${typeName};\n\n`)
+        write(`using ${decl.name.text} = `);
+        walk(decl.type);
+        write(";\n\n");
+        break;
+      }
+      case ts.SyntaxKind.TypeReference: {
+        let ref = node as ts.TypeReferenceNode;
+        // write(ref.typeName.escapedText);
+        walk(ref.typeName);
+        // TODO Type arguments?
+        // TODO QualifiedName
         break;
       }
       default: {
