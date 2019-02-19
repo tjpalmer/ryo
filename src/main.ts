@@ -20,7 +20,7 @@ function main() {
     getScriptVersion: fileName => '0',
     getDefaultLibFileName: options => ts.getDefaultLibFilePath(options),
   });
-  console.log(service);
+  // console.log(service);
 
   // let program = ts.createProgram({
   //   options: {
@@ -32,7 +32,7 @@ function main() {
   // });
   let program = service.getProgram()!;
   program.getSourceFiles().forEach(file => {
-    console.log(file.fileName);
+    // console.log(file.fileName);
     if (!file.isDeclarationFile) {
       let walker = new Walker({program});
       walker.program = program;
@@ -46,8 +46,7 @@ function main() {
   // console.log(ast);
   // console.log(ast.statements);
 
-  console.log("Hi");
-  console.log(process.argv);
+  // console.log(process.argv);
 }
 
 function write(x: string) {
@@ -174,20 +173,26 @@ class Walker implements WalkerVars {
         write(';\n');
         break;
       }
+      case ts.SyntaxKind.SourceFile: {
+        ts.forEachChild(node, walk);
+        break;
+      }
       case ts.SyntaxKind.StringLiteral: {
         let str = node as ts.StringLiteral;
         // TODO Escape string contents.
         write(`"${str.text}"`);
         break;
       }
-      // case ts.SyntaxKind.TypeReference: {
-      //   let ref = node as unknown as ts.TypeReference;
-      //   console.log(node);
-      //   console.log('hi', ref.target, ref.aliasSymbol, ref.symbol, checker.getSymbolAtLocation(node));
-      //   console.log(node.getText());
-      //   throw 'hi';
-      //   break;
-      // }
+      case ts.SyntaxKind.TypeAliasDeclaration: {
+        let decl = node as ts.TypeAliasDeclaration;
+        let typeName = decl.type.getText();
+        if (typeName == 'number') {
+          typeName = 'double';
+        }
+        this.indent();
+        write(`using ${decl.name.text} = ${typeName};\n`)
+        break;
+      }
       default: {
         console.log(node.kind, node);
         ts.forEachChild(node, walk);
