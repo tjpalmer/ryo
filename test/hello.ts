@@ -1,6 +1,6 @@
-type int = number;
+type Result = number;
 
-function main(): int {
+function main(): Result {
   console.log('Hello!');
   return 0;
 }

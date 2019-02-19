@@ -33,16 +33,9 @@ function main() {
   let program = service.getProgram()!;
   program.getSourceFiles().forEach(file => {
     console.log(file.fileName);
-    let walker = new Walker({program});
-    walker.program = program;
     if (!file.isDeclarationFile) {
-      let def;
-      for (let i = 0; i < 1e0; ++i) {
-        def = service.getDefinitionAtPosition(file.fileName, 39);
-      }
-      console.log('def', def);
-      console.log(file);
-      throw 'hi';
+      let walker = new Walker({program});
+      walker.program = program;
       walker.walk(file);
     }
   });
@@ -77,6 +70,23 @@ class Walker implements WalkerVars {
     return this.program.getTypeChecker();
   }
 
+  indent() {
+    for (let i = 0; i < this.indentLevel; ++i) {
+      write('  ');
+    }
+  }
+
+  indentLevel = 0;
+
+  indented(block: () => void) {
+    this.indentLevel += 1;
+    try {
+      block();
+    } finally {
+      this.indentLevel -= 1;
+    }
+  }
+
   program: ts.Program;
 
   walk(node: ts.Node) {
@@ -85,13 +95,20 @@ class Walker implements WalkerVars {
     switch (node.kind) {
       case ts.SyntaxKind.CallExpression: {
         let call = node as ts.CallExpression;
+        // console.log('yo', checker.getSymbolAtLocation(call.expression));
+        // throw 'hi';
         this.walk(call.expression);
         write('(');
         call.arguments.forEach(walk);
         write(')');
         break;
       }
+      case ts.SyntaxKind.EndOfFileToken: {
+        // Nothing to do here.
+        break;
+      }
       case ts.SyntaxKind.ExpressionStatement: {
+        this.indent();
         ts.forEachChild(node, walk);
         write(';\n');
         break;
@@ -99,39 +116,62 @@ class Walker implements WalkerVars {
       case ts.SyntaxKind.FunctionDeclaration: {
         let func = node as ts.FunctionDeclaration;
         let name = func.name && func.name.escapedText;
-        let typeName = func.type || 'void';
+        let typeName = '?';
         let signature = checker.getSignatureFromDeclaration(func);
-        console.log(signature);
-        if (signature) {
-          let returnType = checker.signatureToString(signature);
-          // console.log('hi', returnType);
-          // throw 'hi';
-        }
-        ts.forEachChild(node, walk);
         if (func.type) {
-          // checker.ref
-          // let hi = ts.GoToDefinition.getDefinitionAtPosition(this.program, node.getSourceFile(), func.type.pos);
-          console.log('hi', checker.getSymbolAtLocation(func.type));
-          console.log(func.getChildren());
-          // throw 'hi';
-          let type = checker.getTypeFromTypeNode(func.type);
-          console.log(func.type);
-          console.log(type);
-          if (type.flags & ts.TypeFlags.Boolean) {
-            typeName = 'bool';
-          } else {
-            typeName = (func.type as any).typeName.escapedText;
-          }
+          typeName = func.type.getText();
         } else {
-          typeName = 'void';
+          console.log(signature);
+          if (signature) {
+            console.log('hi', checker.signatureToString(signature));
+            // throw 'hi';
+            let returnType = signature.getReturnType();
+            if (returnType.flags & ts.TypeFlags.Boolean) {
+              typeName = 'bool';
+            } else if (returnType.flags & ts.TypeFlags.VoidLike) {
+              typeName = 'void';
+            }
+          }
         }
-        console.log(node);
+        // console.log(node);
         write(`${typeName} ${name}() {\n`);
         if (func.body) {
-          // console.log(func.body);
-          // func.body.statements.forEach(walk);
+          this.indented(() => {
+            func.body!.statements.forEach(walk);
+          });
         }
         write(`}\n`);
+        break;
+      }
+      case ts.SyntaxKind.Identifier: {
+        let id = node as ts.Identifier;
+        // console.log('id symbol', checker.getSymbolAtLocation(node));
+        // this.program.getSemanticDiagnostics()
+        // console.log('id type', checker.getTypeAtLocation(node));
+        write(`${id.text}`);
+        break;
+      }
+      case ts.SyntaxKind.NumericLiteral: {
+        let num = node as ts.NumericLiteral;
+        write(`${num.text}`);
+        break;
+      }
+      case ts.SyntaxKind.PropertyAccessExpression: {
+        let access = node as ts.PropertyAccessExpression;
+        walk(access.expression);
+        // console.log('access symbol', checker.getSymbolAtLocation(access));
+        write(`.${access.name.text}`);
+        break;
+      }
+      case ts.SyntaxKind.ReturnStatement: {
+        let ret = node as ts.ReturnStatement;
+        this.indent();
+        write('return');
+        if (ret.expression) {
+          write(' ');
+          walk(ret.expression);
+        }
+        write(';\n');
         break;
       }
       case ts.SyntaxKind.StringLiteral: {
@@ -140,16 +180,16 @@ class Walker implements WalkerVars {
         write(`"${str.text}"`);
         break;
       }
-      case ts.SyntaxKind.TypeReference: {
-        let ref = node as unknown as ts.TypeReference;
-        console.log(node);
-        console.log('hi', ref.target, ref.aliasSymbol, ref.symbol, checker.getSymbolAtLocation(node));
-        console.log(node.getText());
-        throw 'hi';
-        break;
-      }
+      // case ts.SyntaxKind.TypeReference: {
+      //   let ref = node as unknown as ts.TypeReference;
+      //   console.log(node);
+      //   console.log('hi', ref.target, ref.aliasSymbol, ref.symbol, checker.getSymbolAtLocation(node));
+      //   console.log(node.getText());
+      //   throw 'hi';
+      //   break;
+      // }
       default: {
-        console.log(node);
+        console.log(node.kind, node);
         ts.forEachChild(node, walk);
         break;
       }
