@@ -2,11 +2,12 @@
   "compilerOptions": {
     "module": "CommonJS",
     "outDir": "dist",
+    "sourceMap": true,
     "strict": true,
     "target": "es2015",
     "types": ["node"]
   },
   "exclude": [
-    "node_modules"
+    "node_modules", "test"
   ]
 }

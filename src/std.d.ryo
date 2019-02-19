@@ -12,3 +12,5 @@ type u8 = number;
 type u16 = number;
 type u32 = number;
 type u64 = number;
+
+declare function trace(message: string): void;

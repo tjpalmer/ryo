@@ -3,23 +3,23 @@ import * as ts from 'typescript';
 
 function main() {
 
-  let service = ts.createLanguageService({
-    getCompilationSettings: () => ({
-      lib: ['lib.es2015.d.ts', 'src/std.d.ts'],
-      strict: true,
-      types: [],
-    }),
-    getCurrentDirectory: process.cwd,
-    getScriptFileNames: () => process.argv.slice(2),
-    getScriptSnapshot: fileName => {
-      if (!fs.existsSync(fileName)) {
-        return undefined;
-      }
-      return ts.ScriptSnapshot.fromString(fs.readFileSync(fileName).toString());
-    },
-    getScriptVersion: fileName => '0',
-    getDefaultLibFileName: options => ts.getDefaultLibFilePath(options),
-  });
+  // let service = ts.createLanguageService({
+  //   getCompilationSettings: () => ({
+  //     lib: ['lib.es2015.d.ts', 'src/std.d.ryo'],
+  //     strict: true,
+  //     types: [],
+  //   }),
+  //   getCurrentDirectory: process.cwd,
+  //   getScriptFileNames: () => process.argv.slice(2),
+  //   getScriptSnapshot: fileName => {
+  //     if (!fs.existsSync(fileName)) {
+  //       return undefined;
+  //     }
+  //     return ts.ScriptSnapshot.fromString(fs.readFileSync(fileName).toString());
+  //   },
+  //   getScriptVersion: fileName => '0',
+  //   getDefaultLibFileName: options => ts.getDefaultLibFilePath(options),
+  // });
   // console.log(service);
 
   // let program = ts.createProgram({
@@ -30,15 +30,14 @@ function main() {
   //   },
   //   rootNames: process.argv.slice(2),
   // });
-  let program = service.getProgram()!;
-  program.getSourceFiles().forEach(file => {
-    // console.log(file.fileName);
-    if (!file.isDeclarationFile) {
-      let walker = new Walker({program});
-      walker.program = program;
-      walker.walk(file);
-    }
-  });
+  let scriptName = process.argv[2];
+  console.log(scriptName);
+  let code = fs.readFileSync(scriptName).toString();
+  console.log(code);
+  let scriptNode =
+    ts.createSourceFile(scriptName, code, ts.ScriptTarget.ES2015);
+  let walker = new Walker({});
+  walker.walk(scriptNode);
 
   // let ast = ts.createSourceFile("hi", source, ts.ScriptTarget.ES2015);
   // walk(ast);
@@ -55,19 +54,19 @@ function write(x: string) {
 
 interface WalkerVars {
 
-  program: ts.Program;
+  // program: ts.Program;
 
 }
 
 class Walker implements WalkerVars {
 
   constructor(settings: WalkerVars) {
-    this.program = settings.program;
+    // this.program = settings.program;
   }
 
-  get checker() {
-    return this.program.getTypeChecker();
-  }
+  // get checker() {
+  //   return this.program.getTypeChecker();
+  // }
 
   indent() {
     for (let i = 0; i < this.indentLevel; ++i) {
@@ -86,10 +85,10 @@ class Walker implements WalkerVars {
     }
   }
 
-  program: ts.Program;
+  // program: ts.Program;
 
   walk(node: ts.Node) {
-    let {checker} = this;
+    // let {checker} = this;
     let walk = (node: ts.Node) => this.walk(node);
     switch (node.kind) {
       case ts.SyntaxKind.CallExpression: {
@@ -116,21 +115,21 @@ class Walker implements WalkerVars {
         let func = node as ts.FunctionDeclaration;
         let name = func.name && func.name.escapedText;
         let typeName = '?';
-        let signature = checker.getSignatureFromDeclaration(func);
         if (func.type) {
           typeName = func.type.getText();
         } else {
-          console.log(signature);
-          if (signature) {
-            console.log('hi', checker.signatureToString(signature));
-            // throw 'hi';
-            let returnType = signature.getReturnType();
-            if (returnType.flags & ts.TypeFlags.Boolean) {
-              typeName = 'bool';
-            } else if (returnType.flags & ts.TypeFlags.VoidLike) {
-              typeName = 'void';
-            }
-          }
+          // let signature = checker.getSignatureFromDeclaration(func);
+          // console.log(signature);
+          // if (signature) {
+          //   console.log('hi', checker.signatureToString(signature));
+          //   // throw 'hi';
+          //   let returnType = signature.getReturnType();
+          //   if (returnType.flags & ts.TypeFlags.Boolean) {
+          //     typeName = 'bool';
+          //   } else if (returnType.flags & ts.TypeFlags.VoidLike) {
+          //     typeName = 'void';
+          //   }
+          // }
         }
         // console.log(node);
         write(`${typeName} ${name}() {\n`);
