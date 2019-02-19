@@ -1,4 +1,4 @@
-type Result = number;
+type Result = i32;
 
 function main(): Result {
   console.log('Hello!');

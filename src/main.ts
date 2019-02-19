@@ -5,7 +5,7 @@ function main() {
 
   let service = ts.createLanguageService({
     getCompilationSettings: () => ({
-      lib: ['lib.es2015.d.ts'],
+      lib: ['lib.es2015.d.ts', 'src/std.d.ts'],
       strict: true,
       types: [],
     }),
@@ -139,7 +139,7 @@ class Walker implements WalkerVars {
             func.body!.statements.forEach(walk);
           });
         }
-        write(`}\n`);
+        write(`}\n\n`);
         break;
       }
       case ts.SyntaxKind.Identifier: {
@@ -190,7 +190,7 @@ class Walker implements WalkerVars {
           typeName = 'double';
         }
         this.indent();
-        write(`using ${decl.name.text} = ${typeName};\n`)
+        write(`using ${decl.name.text} = ${typeName};\n\n`)
         break;
       }
       default: {
