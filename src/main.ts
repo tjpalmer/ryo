@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as ts from 'typescript';
+import {prelude} from './prelude';
 
 function main() {
 
@@ -37,6 +38,7 @@ function main() {
   let scriptNode =
     ts.createSourceFile(scriptName, code, ts.ScriptTarget.ES2015);
   // console.log(scriptNode.text);
+  write(prelude);
   let walker = new Walker({});
   walker.walk(scriptNode);
 
@@ -88,9 +90,9 @@ class Walker implements WalkerVars {
 
   // program: ts.Program;
 
-  walk(node: ts.Node, asType = false) {
+  walk(node: ts.Node) {
     // let {checker} = this;
-    let walk = (node: ts.Node) => this.walk(node);
+    let walk = this.walk.bind(this);
     switch (node.kind) {
       case ts.SyntaxKind.CallExpression: {
         let call = node as ts.CallExpression;
@@ -138,7 +140,7 @@ class Walker implements WalkerVars {
         if (func.type) {
           walk(func.type);
         } else {
-          write('?');
+          write('void');
         }
         write(` ${name}() {\n`);
         if (func.body) {
