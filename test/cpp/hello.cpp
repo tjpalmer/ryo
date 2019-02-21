@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 
+// TODO Need to namespace these, but then need to qualify accesses.
 using f32 = float;
 using f64 = double;
 
@@ -17,7 +18,7 @@ using u32 = ::std::uint32_t;
 using u64 = ::std::uint64_t;
 
 void trace(const std::string& text) {
-  std::cout << text << std::endl;
+  std::cerr << text << std::endl;
 }
 
 using Result = i32;

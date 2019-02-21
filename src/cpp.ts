@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import {Gen} from './gen';
+import {Gen, GenWalker, GenWalkerVars} from './gen';
 
 export function generate(gen: Gen) {
   gen.write(prelude);
@@ -12,6 +12,7 @@ let prelude = `
 #include <iostream>
 #include <string>
 
+// TODO Need to namespace these, but then need to qualify accesses.
 using f32 = float;
 using f64 = double;
 
@@ -26,60 +27,23 @@ using u32 = ::std::uint32_t;
 using u64 = ::std::uint64_t;
 
 void trace(const std::string& text) {
-  std::cout << text << std::endl;
+  std::cerr << text << std::endl;
 }
 
 `;
 
-interface WalkerVars {
+class Walker extends GenWalker {
 
-  gen: Gen;
-
-  // program: ts.Program;
-
-}
-
-class Walker {
-
-  constructor(settings: WalkerVars) {
-    this.gen = settings.gen;
-    // this.program = settings.program;
+  constructor(settings: GenWalkerVars) {
+    super(settings);
   }
-
-  // get checker() {
-  //   return this.program.getTypeChecker();
-  // }
-
-  gen: Gen;
-
-  indent() {
-    for (let i = 0; i < this.indentLevel; ++i) {
-      this.gen.write('  ');
-    }
-  }
-
-  indentLevel = 0;
-
-  indented(block: () => void) {
-    this.indentLevel += 1;
-    try {
-      block();
-    } finally {
-      this.indentLevel -= 1;
-    }
-  }
-
-  // program: ts.Program;
 
   walk(node: ts.Node) {
-    // let {checker} = this;
     let walk = this.walk.bind(this);
     let write = this.gen.write;
     switch (node.kind) {
       case ts.SyntaxKind.CallExpression: {
         let call = node as ts.CallExpression;
-        // console.log('yo', checker.getSymbolAtLocation(call.expression));
-        // throw 'hi';
         this.walk(call.expression);
         write('(');
         call.arguments.forEach(walk);
@@ -99,26 +63,6 @@ class Walker {
       case ts.SyntaxKind.FunctionDeclaration: {
         let func = node as ts.FunctionDeclaration;
         let name = func.name && func.name.escapedText;
-        // let typeName = '?';
-        // if (func.type) {
-        //   // TODO Walk type instead.
-        //   // console.log(func.type);
-        //   typeName = (func.type as any).typeName.escapedText;
-        // } else {
-        //   // let signature = checker.getSignatureFromDeclaration(func);
-        //   // console.log(signature);
-        //   // if (signature) {
-        //   //   console.log('hi', checker.signatureToString(signature));
-        //   //   // throw 'hi';
-        //   //   let returnType = signature.getReturnType();
-        //   //   if (returnType.flags & ts.TypeFlags.Boolean) {
-        //   //     typeName = 'bool';
-        //   //   } else if (returnType.flags & ts.TypeFlags.VoidLike) {
-        //   //     typeName = 'void';
-        //   //   }
-        //   // }
-        // }
-        // console.log(node);
         if (func.type) {
           walk(func.type);
         } else {
@@ -135,9 +79,6 @@ class Walker {
       }
       case ts.SyntaxKind.Identifier: {
         let id = node as ts.Identifier;
-        // console.log('id symbol', checker.getSymbolAtLocation(node));
-        // this.program.getSemanticDiagnostics()
-        // console.log('id type', checker.getTypeAtLocation(node));
         write(id.text);
         break;
       }
@@ -149,7 +90,6 @@ class Walker {
       case ts.SyntaxKind.PropertyAccessExpression: {
         let access = node as ts.PropertyAccessExpression;
         walk(access.expression);
-        // console.log('access symbol', checker.getSymbolAtLocation(access));
         write(`.${access.name.text}`);
         break;
       }
@@ -189,7 +129,6 @@ class Walker {
       }
       case ts.SyntaxKind.TypeReference: {
         let ref = node as ts.TypeReferenceNode;
-        // write(ref.typeName.escapedText);
         walk(ref.typeName);
         // TODO Type arguments?
         // TODO QualifiedName

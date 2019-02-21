@@ -4,6 +4,7 @@
   "description": "",
   "main": "dist/main.js",
   "dependencies": {
+    "commander": "^2.19.0",
     "typescript": "^3.3.3"
   },
   "devDependencies": {
