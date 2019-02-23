@@ -7,10 +7,14 @@
 
 using Result = int;
 
+::std::int32_t after(::std::int32_t x) {
+  return x + 1;
+}
+
 Result main() {
   ::std::int32_t x = 3;
   ryo_trace("Hello!");
-  ryo_trace(x);
+  ryo_trace(after(x));
   return 0;
 }
 

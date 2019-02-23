@@ -1,8 +1,12 @@
 type Result = int;
 
+function after(x: i32): i32 {
+  return x + 1;
+}
+
 function main(): Result {
   let x: i32 = 3;
   trace('Hello!');
-  trace(x);
+  trace(after(x));
   return 0;
 }

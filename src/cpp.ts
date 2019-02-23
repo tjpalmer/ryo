@@ -42,6 +42,18 @@ class Walker extends GenWalker {
     let walk = this.walk.bind(this);
     let write = this.gen.write;
     switch (node.kind) {
+      case ts.SyntaxKind.BinaryExpression: {
+        let expr = node as ts.BinaryExpression;
+        walk(expr.left);
+        // console.log(expr.operatorToken);
+        write(' ');
+        switch (expr.operatorToken.kind) {
+          case ts.SyntaxKind.PlusToken: {write('+'); break;}
+        }
+        write(' ');
+        walk(expr.right);
+        break;
+      }
       case ts.SyntaxKind.CallExpression: {
         let call = node as ts.CallExpression;
         this.walk(call.expression);
@@ -68,7 +80,17 @@ class Walker extends GenWalker {
         } else {
           write('void');
         }
-        write(` ${name}() {\n`);
+        write(` ${name}(`);
+        func.parameters.forEach((param, index) => {
+          // TODO Destructuring.
+          if (param.name.kind == ts.SyntaxKind.Identifier) {
+            if (index) {
+              write(', ');
+            }
+            walk(param);
+          }
+        });
+        write(') {\n');
         if (func.body) {
           this.indented(() => {
             func.body!.statements.forEach(walk);
@@ -85,6 +107,20 @@ class Walker extends GenWalker {
       case ts.SyntaxKind.NumericLiteral: {
         let num = node as ts.NumericLiteral;
         write(`${num.text}`);
+        break;
+      }
+      case ts.SyntaxKind.Parameter:
+      case ts.SyntaxKind.VariableDeclaration: {
+        let decl = node as ts.ParameterDeclaration | ts.VariableDeclaration;
+        if (decl.name.kind == ts.SyntaxKind.Identifier) {
+          walk(decl.type!);
+          let name = decl.name as ts.Identifier;
+          write(` ${name.escapedText}`);
+          if (decl.initializer) {
+            write(' = ');
+            walk(decl.initializer);
+          }
+        }
         break;
       }
       case ts.SyntaxKind.PropertyAccessExpression: {
@@ -140,13 +176,7 @@ class Walker extends GenWalker {
           // TODO Destructuring.
           if (decl.name.kind == ts.SyntaxKind.Identifier) {
             this.indent();
-            walk(decl.type!);
-            let name = decl.name as ts.Identifier;
-            write(` ${name.escapedText}`);
-            if (decl.initializer) {
-              write(' = ');
-              walk(decl.initializer);
-            }
+            walk(decl);
             write(';\n');
           }
         });
