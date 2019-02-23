@@ -140,6 +140,24 @@ class Walker extends GenWalker {
         // TODO QualifiedName
         break;
       }
+      case ts.SyntaxKind.VariableStatement: {
+        let statement = node as ts.VariableStatement;
+        statement.declarationList.declarations.forEach(decl => {
+          // TODO Destructuring.
+          if (decl.name.kind == ts.SyntaxKind.Identifier) {
+            this.indent();
+            walk(decl.type!);
+            let name = decl.name as ts.Identifier;
+            write(` ${name.escapedText}`);
+            if (decl.initializer) {
+              write(' = ');
+              walk(decl.initializer);
+            }
+            write(';\n');
+          }
+        });
+        break;
+      }
       default: {
         console.log(node.kind, node);
         ts.forEachChild(node, walk);

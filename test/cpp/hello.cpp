@@ -14,6 +14,7 @@ void trace(const std::string& text) {
 using Result = int;
 
 Result main() {
+  ::std::int32_t c = 3;
   ::ryo::trace("Hello!");
   return 0;
 }

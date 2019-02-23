@@ -1,7 +1,7 @@
 type Result = int;
 
 function main(): Result {
-  // let c: i32 = 3;
+  let c: i32 = 3;
   trace('Hello!');
   return 0;
 }
