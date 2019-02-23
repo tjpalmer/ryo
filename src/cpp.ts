@@ -12,25 +12,31 @@ let prelude = `
 #include <iostream>
 #include <string>
 
-// TODO Need to namespace these, but then need to qualify accesses.
-using f32 = float;
-using f64 = double;
-
-using i8 = ::std::int8_t;
-using i16 = ::std::int16_t;
-using i32 = ::std::int32_t;
-using i64 = ::std::int64_t;
-
-using u8 = ::std::uint8_t;
-using u16 = ::std::uint16_t;
-using u32 = ::std::uint32_t;
-using u64 = ::std::uint64_t;
+namespace ryo {
 
 void trace(const std::string& text) {
-  std::cerr << text << std::endl;
+  ::std::cerr << text << ::std::endl;
 }
 
+}  // namespace ryo
+
 `;
+
+let std = new Map<string, string>(Object.entries({
+  f32: 'float',
+  f64: 'double',
+  i8: '::std::int8_t',
+  i16: '::std::int16_t',
+  i32: '::std::int32_t',
+  i64: '::std::int64_t',
+  int: 'int',
+  u8: '::std::uint8_t',
+  u16: '::std::uint16_t',
+  u32: '::std::uint32_t',
+  u64: '::std::uint64_t',
+  string: '::std::string',
+  trace: '::ryo::trace',
+}));
 
 class Walker extends GenWalker {
 
@@ -79,7 +85,7 @@ class Walker extends GenWalker {
       }
       case ts.SyntaxKind.Identifier: {
         let id = node as ts.Identifier;
-        write(id.text);
+        write(std.get(id.text) || id.text);
         break;
       }
       case ts.SyntaxKind.NumericLiteral: {
@@ -118,9 +124,9 @@ class Walker extends GenWalker {
         let decl = node as ts.TypeAliasDeclaration;
         // TODO Walk type instead.
         let typeName = (decl.type as any).typeName.escapedText;
-        if (typeName == 'number') {
-          typeName = 'double';
-        }
+        // if (typeName == 'number') {
+        //   typeName = 'double';
+        // }
         this.indent();
         write(`using ${decl.name.text} = `);
         walk(decl.type);
