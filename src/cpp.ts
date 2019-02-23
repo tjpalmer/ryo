@@ -12,13 +12,7 @@ let prelude = `
 #include <iostream>
 #include <string>
 
-namespace ryo {
-
-void trace(const std::string& text) {
-  ::std::cerr << text << ::std::endl;
-}
-
-}  // namespace ryo
+#define ryo_trace(message) (::std::cerr << (message) << " (" << __FILE__ << "#" << __LINE__ << ")" << ::std::endl)
 
 `;
 
@@ -35,7 +29,7 @@ let std = new Map<string, string>(Object.entries({
   u32: '::std::uint32_t',
   u64: '::std::uint64_t',
   string: '::std::string',
-  trace: '::ryo::trace',
+  trace: 'ryo_trace',
 }));
 
 class Walker extends GenWalker {

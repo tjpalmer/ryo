@@ -15,4 +15,4 @@ type u16 = number;
 type u32 = number;
 type u64 = number;
 
-declare function trace(message: string): void;
+declare function trace<Message>(message: Message): void;
