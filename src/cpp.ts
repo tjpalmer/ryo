@@ -3,7 +3,7 @@ import {Gen, GenWalker, GenWalkerVars} from './gen';
 
 export function generate(gen: Gen) {
   gen.write(prelude);
-  let walker = new Walker({gen});
+  let walker = new CppGenWalker({gen});
   walker.walk(gen.sourceNode);
 }
 
@@ -32,7 +32,7 @@ let std = new Map<string, string>(Object.entries({
   trace: 'ryo_trace',
 }));
 
-class Walker extends GenWalker {
+class CppGenWalker extends GenWalker {
 
   constructor(settings: GenWalkerVars) {
     super(settings);
@@ -113,7 +113,12 @@ class Walker extends GenWalker {
       case ts.SyntaxKind.VariableDeclaration: {
         let decl = node as ts.ParameterDeclaration | ts.VariableDeclaration;
         if (decl.name.kind == ts.SyntaxKind.Identifier) {
-          walk(decl.type!);
+          write('const ');
+          if (decl.type) {
+            walk(decl.type!);
+          } else {
+            write('auto');
+          }
           let name = decl.name as ts.Identifier;
           write(` ${name.escapedText}`);
           if (decl.initializer) {
@@ -121,6 +126,17 @@ class Walker extends GenWalker {
             walk(decl.initializer);
           }
         }
+        break;
+      }
+      case ts.SyntaxKind.PrefixUnaryExpression: {
+        let expr = node as ts.PrefixUnaryExpression;
+        switch (expr.operator) {
+          case ts.SyntaxKind.MinusToken: {
+            write('-');
+            break;
+          }
+        }
+        walk(expr.operand);
         break;
       }
       case ts.SyntaxKind.PropertyAccessExpression: {

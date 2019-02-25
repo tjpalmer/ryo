@@ -6,7 +6,9 @@ function after(x: i32): i32 {
 
 function main(): Result {
   let x: i32 = 3;
+  let y = -3;
   trace('Hello!');
   trace(after(x));
+  trace(after(y));
   return 0;
 }

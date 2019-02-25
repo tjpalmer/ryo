@@ -5,6 +5,7 @@ import * as ts from 'typescript';
 import * as cpp from './cpp';
 import * as py from './py';
 import {Gen} from './gen';
+import {resolve} from './resolve';
 
 function main() {
   options
@@ -14,14 +15,18 @@ function main() {
   // Read and parse input.
   let scriptName = options.args[0];
   let code = fs.readFileSync(scriptName).toString();
-  let sourceNode =
-    ts.createSourceFile(scriptName, code, ts.ScriptTarget.ES2015);
   // Make output parent dir.
   let out = options.out as string;
   let parent = path.dirname(out);
   if (!fs.existsSync(parent)) {
     fs.mkdirSync(parent, {recursive: true});
   }
+  // Parse and resolve.
+  let sourceNode =
+    ts.createSourceFile(scriptName, code, ts.ScriptTarget.ES2015);
+  // let program = resolve(sourceNode);
+  // console.log(program);
+  // return;
   // Find generator.
   let extension = (out.match(/\.([^.]+)$/) || [''])[1];
   let mod = ({cpp, py} as any)[extension] as {generate(gen: Gen): void};
