@@ -24,9 +24,11 @@ function main() {
   // Parse and resolve.
   let sourceNode =
     ts.createSourceFile(scriptName, code, ts.ScriptTarget.ES2015);
-  // let program = resolve(sourceNode);
-  // console.log(program);
-  // return;
+  let program = resolve(sourceNode);
+  console.log(program);
+  console.log(program.global.kids);
+  program.global.kids[0].kids.forEach(kid => console.log(kid));
+  return;
   // Find generator.
   let extension = (out.match(/\.([^.]+)$/) || [''])[1];
   let mod = ({cpp, py} as any)[extension] as {generate(gen: Gen): void};

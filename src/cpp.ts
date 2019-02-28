@@ -168,11 +168,6 @@ class CppGenWalker extends GenWalker {
       }
       case ts.SyntaxKind.TypeAliasDeclaration: {
         let decl = node as ts.TypeAliasDeclaration;
-        // TODO Walk type instead.
-        let typeName = (decl.type as any).typeName.escapedText;
-        // if (typeName == 'number') {
-        //   typeName = 'double';
-        // }
         this.indent();
         write(`using ${decl.name.text} = `);
         walk(decl.type);
@@ -199,7 +194,7 @@ class CppGenWalker extends GenWalker {
         break;
       }
       default: {
-        console.log(node.kind, node);
+        console.log(`unhandled gen ${ts.SyntaxKind[node.kind]}`);
         ts.forEachChild(node, walk);
         break;
       }
