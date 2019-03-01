@@ -90,13 +90,15 @@ class DefWalker {
         block.statements.forEach(kid => this.walk(kid, parent));
         break;
       }
-      case ts.SyntaxKind.EndOfFileToken: {
+      case ts.SyntaxKind.EndOfFileToken:
+      case ts.SyntaxKind.NumericLiteral:
+      case ts.SyntaxKind.PlusToken:
+      case ts.SyntaxKind.StringLiteral: {
         // Nothing to do here.
         break;
       }
       case ts.SyntaxKind.FunctionDeclaration: {
         let decl = node as ts.FunctionDeclaration;
-        this.putDef(scope, {isValue: true, name: decl.name!.text, node});
         let kidScope: Scope;
         let parent = scope;
         if (decl.parameters.length || decl.typeParameters) {
@@ -118,17 +120,26 @@ class DefWalker {
             }
           });
         }
+        // let type: Entity | undefined = undefined;
         if (decl.type) {
+          // TODO We don't return or store the reference in an accessible way.
+          // TODO Figure out the plan.
           this.walk(decl.type, parent);
+          // type = this.program.defs.get(decl.type);
         }
+        this.putDef(scope, {
+          isValue: true, name: decl.name!.text, node, type: {node: decl},
+        });
         if (decl.body) {
           this.walk(decl.body, parent);
         }
         break;
       }
-      case ts.SyntaxKind.ReturnStatement:
-      case ts.SyntaxKind.SourceFile: {
-        ts.forEachChild(node, walk);
+      case ts.SyntaxKind.Identifier: {
+        let id = node as ts.Identifier;
+        // Type references should be handled elsewhere, so these should be
+        // value references.
+        scope.refs.push({isValue: true, name: id.text, node});
         break;
       }
       case ts.SyntaxKind.TypeAliasDeclaration: {
@@ -164,14 +175,32 @@ class DefWalker {
         break;
       }
       default: {
-        console.log(`unhandled def ${ts.SyntaxKind[node.kind]}`);
+        // TODO Eventually remove this switch.
+        switch (node.kind) {
+          case ts.SyntaxKind.BinaryExpression:
+          case ts.SyntaxKind.CallExpression:
+          case ts.SyntaxKind.ExpressionStatement:
+          case ts.SyntaxKind.PrefixUnaryExpression:
+          case ts.SyntaxKind.ReturnStatement:
+          case ts.SyntaxKind.SourceFile: {
+            // These need no special treatment, but keeping here to track which
+            // we've sanitized.
+            break;
+          }
+          default: {
+            console.log(`unhandled def ${ts.SyntaxKind[node.kind]}`);
+            // console.log(node);
+            break;
+          }
+        }
+        // Walk kids.
         ts.forEachChild(node, walk);
         break;
       }
     }
   }
 
-  putDef(scope: Scope, entity: Entity) {
+  putDef(scope: Scope, entity: Entity | Value) {
     this.program.defs.set(entity.node!, entity);
     this.putScope(scope, entity);
   }
