@@ -1,4 +1,5 @@
 import * as ts from 'typescript';
+import { write } from 'fs';
 
 export interface Program {
 

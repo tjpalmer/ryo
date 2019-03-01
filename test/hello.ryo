@@ -1,7 +1,16 @@
 type Result = int;
 
+class Point {
+  x: f64;
+  y: f64;
+}
+
 function after(x: i32): i32 {
   return x + 1;
+}
+
+function norm2(point: Point): f64 {
+  return point.x * point.x + point.y * point.y;
 }
 
 function main(): Result {
@@ -10,5 +19,7 @@ function main(): Result {
   trace('Hello!');
   trace(after(x));
   trace(after(y));
+  let point: Point = {x: 4, y: 7};
+  trace(norm2(point));
   return 0;
 }

@@ -49,6 +49,7 @@ class CppGenWalker extends GenWalker {
         write(' ');
         switch (expr.operatorToken.kind) {
           case ts.SyntaxKind.PlusToken: {write('+'); break;}
+          case ts.SyntaxKind.AsteriskToken: {write('*'); break;}
         }
         write(' ');
         walk(expr.right);
@@ -60,6 +61,17 @@ class CppGenWalker extends GenWalker {
         write('(');
         call.arguments.forEach(walk);
         write(')');
+        break;
+      }
+      case ts.SyntaxKind.ClassDeclaration: {
+        let decl = node as ts.ClassDeclaration;
+        // TODO Type parameters.
+        write(`struct ${decl.name!.text} {\n`);
+        this.indented(() => {
+          // TODO Check for private.
+          decl.members.forEach(walk);
+        });
+        write('};\n\n');
         break;
       }
       case ts.SyntaxKind.EndOfFileToken: {
@@ -109,13 +121,31 @@ class CppGenWalker extends GenWalker {
         write(`${num.text}`);
         break;
       }
+      case ts.SyntaxKind.ObjectLiteralExpression: {
+        let expr = node as ts.ObjectLiteralExpression;
+        write('{');
+        expr.properties.forEach((prop, index) => {
+          if (index) {
+            write(', ');
+          }
+          switch (prop.kind) {
+            case ts.SyntaxKind.PropertyAssignment: {
+              let assign = prop as ts.PropertyAssignment;
+              walk(assign.initializer);
+              break;
+            }
+          }
+        });
+        write('}');
+        break;
+      }
       case ts.SyntaxKind.Parameter:
       case ts.SyntaxKind.VariableDeclaration: {
         let decl = node as ts.ParameterDeclaration | ts.VariableDeclaration;
         if (decl.name.kind == ts.SyntaxKind.Identifier) {
           write('const ');
           if (decl.type) {
-            walk(decl.type!);
+            walk(decl.type);
           } else {
             write('auto');
           }
@@ -143,6 +173,14 @@ class CppGenWalker extends GenWalker {
         let access = node as ts.PropertyAccessExpression;
         walk(access.expression);
         write(`.${access.name.text}`);
+        break;
+      }
+      case ts.SyntaxKind.PropertyDeclaration: {
+        let decl = node as ts.PropertyDeclaration;
+        let name = decl.name as ts.Identifier;
+        this.indent();
+        walk(decl.type!);
+        write(` ${name.text};\n`);
         break;
       }
       case ts.SyntaxKind.ReturnStatement: {
