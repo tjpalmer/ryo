@@ -5,14 +5,6 @@ class Point {
   y: f64;
 }
 
-function after(x: i32): i32 {
-  return x + 1;
-}
-
-function norm2(point: Point): f64 {
-  return point.x * point.x + point.y * point.y;
-}
-
 function main(): Result {
   let x: i32 = 3;
   let y = -3;
@@ -22,4 +14,12 @@ function main(): Result {
   let point: Point = {x: 4, y: 7};
   trace(norm2(point));
   return 0;
+}
+
+function after(x: i32): i32 {
+  return x + 1;
+}
+
+function norm2(point: Point): f64 {
+  return point.x * point.x + point.y * point.y;
 }

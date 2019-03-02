@@ -3,8 +3,8 @@ import {Gen, GenWalker, GenWalkerVars} from './gen';
 
 export function generate(gen: Gen) {
   gen.write(prelude);
-  let walker = new CppGenWalker({gen});
-  walker.walk(gen.sourceNode);
+  new DeclGenWalker({gen}).walk(gen.sourceNode);
+  new CppGenWalker({gen}).walk(gen.sourceNode);
 }
 
 let prelude = `
@@ -40,7 +40,7 @@ class CppGenWalker extends GenWalker {
 
   walk(node: ts.Node) {
     let walk = this.walk.bind(this);
-    let write = this.gen.write;
+    let {write} = this.gen;
     switch (node.kind) {
       case ts.SyntaxKind.BinaryExpression: {
         let expr = node as ts.BinaryExpression;
@@ -64,14 +64,7 @@ class CppGenWalker extends GenWalker {
         break;
       }
       case ts.SyntaxKind.ClassDeclaration: {
-        let decl = node as ts.ClassDeclaration;
-        // TODO Type parameters.
-        write(`struct ${decl.name!.text} {\n`);
-        this.indented(() => {
-          // TODO Check for private.
-          decl.members.forEach(walk);
-        });
-        write('};\n\n');
+        this.writeClass(node);
         break;
       }
       case ts.SyntaxKind.EndOfFileToken: {
@@ -85,30 +78,7 @@ class CppGenWalker extends GenWalker {
         break;
       }
       case ts.SyntaxKind.FunctionDeclaration: {
-        let func = node as ts.FunctionDeclaration;
-        let name = func.name && func.name.escapedText;
-        if (func.type) {
-          walk(func.type);
-        } else {
-          write('void');
-        }
-        write(` ${name}(`);
-        func.parameters.forEach((param, index) => {
-          // TODO Destructuring.
-          if (param.name.kind == ts.SyntaxKind.Identifier) {
-            if (index) {
-              write(', ');
-            }
-            walk(param);
-          }
-        });
-        write(') {\n');
-        if (func.body) {
-          this.indented(() => {
-            func.body!.statements.forEach(walk);
-          });
-        }
-        write(`}\n\n`);
+        this.writeFunction(node);
         break;
       }
       case ts.SyntaxKind.Identifier: {
@@ -123,6 +93,8 @@ class CppGenWalker extends GenWalker {
       }
       case ts.SyntaxKind.ObjectLiteralExpression: {
         let expr = node as ts.ObjectLiteralExpression;
+        // TODO Check order.
+        // TODO If out of order, precompute values then list in order.
         write('{');
         expr.properties.forEach((prop, index) => {
           if (index) {
@@ -140,6 +112,7 @@ class CppGenWalker extends GenWalker {
         break;
       }
       case ts.SyntaxKind.Parameter:
+      // TODO If composite parameter (or other cases), use a reference.
       case ts.SyntaxKind.VariableDeclaration: {
         let decl = node as ts.ParameterDeclaration | ts.VariableDeclaration;
         if (decl.name.kind == ts.SyntaxKind.Identifier) {
@@ -196,6 +169,7 @@ class CppGenWalker extends GenWalker {
       }
       case ts.SyntaxKind.SourceFile: {
         ts.forEachChild(node, walk);
+        this.endSourceFile();
         break;
       }
       case ts.SyntaxKind.StringLiteral: {
@@ -205,11 +179,7 @@ class CppGenWalker extends GenWalker {
         break;
       }
       case ts.SyntaxKind.TypeAliasDeclaration: {
-        let decl = node as ts.TypeAliasDeclaration;
-        this.indent();
-        write(`using ${decl.name.text} = `);
-        walk(decl.type);
-        write(";\n\n");
+        this.writeTypeAlias(node);
         break;
       }
       case ts.SyntaxKind.TypeReference: {
@@ -237,6 +207,122 @@ class CppGenWalker extends GenWalker {
         break;
       }
     }
+  }
+
+  endSourceFile() {
+    // Nothing here for now.
+  }
+
+  writeClass(node: ts.Node) {
+    let decl = node as ts.ClassDeclaration;
+    // TODO Type parameters.
+    this.gen.write(`struct ${decl.name!.text}`);
+    this.writeClassBody(decl);
+  }
+
+  writeClassBody(decl: ts.ClassDeclaration) {
+    this.gen.write(' {\n');
+    this.indented(() => {
+      // TODO Check for private.
+      decl.members.forEach(node => this.walk(node));
+    });
+    this.gen.write('};\n\n');
+  }
+
+  writeFunction(node: ts.Node) {
+    let {write} = this.gen;
+    let func = node as ts.FunctionDeclaration;
+    let name = func.name && func.name.escapedText;
+    if (func.type) {
+      this.walk(func.type);
+    }
+    else {
+      write('void');
+    }
+    write(` ${name}(`);
+    func.parameters.forEach((param, index) => {
+      // TODO Destructuring.
+      if (param.name.kind == ts.SyntaxKind.Identifier) {
+        if (index) {
+          write(', ');
+        }
+        this.walk(param);
+      }
+    });
+    write(')');
+    this.writeFunctionBody(func);
+  }
+
+  writeFunctionBody(func: ts.FunctionDeclaration) {
+    this.gen.write(' {\n');
+    if (func.body) {
+      this.indented(() => {
+        func.body!.statements.forEach(node => this.walk(node));
+      });
+    }
+    this.gen.write(`}\n\n`);
+  }
+
+  writeTypeAlias(node: ts.Node) {
+    // Do this in declaration section.
+  }
+
+}
+
+enum DeclGroup {
+  None,
+  Classes,
+  Functions,
+}
+
+class DeclGenWalker extends CppGenWalker {
+
+  constructor(settings: GenWalkerVars) {
+    super(settings);
+  }
+
+  group = DeclGroup.None;
+
+  endSourceFile() {
+    if (this.group != DeclGroup.None) {
+      this.gen.write('\n');
+    }
+  }
+
+  writeClass(node: ts.Node) {
+    if (this.group == DeclGroup.Functions) {
+      this.gen.write('\n');
+    }
+    this.group = DeclGroup.Classes;
+    super.writeClass(node);
+  }
+
+  writeClassBody(decl: ts.ClassDeclaration) {
+    this.gen.write(';\n');
+  }
+
+  writeFunction(node: ts.Node) {
+    if (this.group == DeclGroup.Classes) {
+      this.gen.write('\n');
+    }
+    this.group = DeclGroup.Functions;
+    super.writeFunction(node);
+  }
+
+  writeFunctionBody(func: ts.FunctionDeclaration) {
+    this.gen.write(';\n');
+  }
+
+  writeTypeAlias(node: ts.Node) {
+    if (this.group != DeclGroup.None) {
+      this.gen.write('\n');
+    }
+    this.group = DeclGroup.None;
+    let decl = node as ts.TypeAliasDeclaration;
+    this.indent();
+    this.gen.write(`using ${decl.name.text} = `);
+    this.walk(decl.type);
+    this.gen.write(";\n\n");
   }
 
 }

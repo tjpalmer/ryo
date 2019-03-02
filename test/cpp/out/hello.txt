@@ -1,4 +1,4 @@
-Hello! (./test/cpp/hello.cpp#26)
-4 (./test/cpp/hello.cpp#27)
--2 (./test/cpp/hello.cpp#28)
-65 (./test/cpp/hello.cpp#30)
+Hello! (./test/cpp/hello.cpp#24)
+4 (./test/cpp/hello.cpp#25)
+-2 (./test/cpp/hello.cpp#26)
+65 (./test/cpp/hello.cpp#28)
