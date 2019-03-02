@@ -106,6 +106,15 @@ class CppGenWalker extends GenWalker {
               walk(assign.initializer);
               break;
             }
+            case ts.SyntaxKind.ShorthandPropertyAssignment: {
+              let assign = prop as ts.ShorthandPropertyAssignment;
+              write(assign.name.text);
+              break;
+            }
+            default: {
+              console.log(`unhandled gen ${ts.SyntaxKind[prop.kind]}`);
+              break;
+            }
           }
         });
         write('}');

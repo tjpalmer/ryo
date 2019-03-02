@@ -7,11 +7,15 @@ class Point {
 
 function main(): Result {
   let x: i32 = 3;
-  let y = -3;
+  let y = -3.5;
   trace('Hello!');
   trace(after(x));
   trace(after(y));
-  let point: Point = {x: 4, y: 7};
+  let point: Point = {x: 4, y};
+  // Way to embed an object literal as an expression with out of order properties.
+  // Of course, if we are sure about no side effects, we can reorder operations.
+  // let point: Point = {y: something(), x: other};
+  // const Point point = ([]() {double y = 2; double x = y + 1; return Point {x, y};})();
   trace(norm2(point));
   return 0;
 }

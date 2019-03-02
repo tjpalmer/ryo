@@ -20,11 +20,11 @@ struct Point {
 
 Result main() {
   const ::std::int32_t x = 3;
-  const auto y = -3;
+  const auto y = -3.5;
   ryo_trace("Hello!");
   ryo_trace(after(x));
   ryo_trace(after(y));
-  const Point point = {4, 7};
+  const Point point = {4, y};
   ryo_trace(norm2(point));
   return 0;
 }
