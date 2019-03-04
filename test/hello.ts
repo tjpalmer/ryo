@@ -1,8 +1,10 @@
+import {f64, i32, int, trace} from "../src/ryo";
+
 type Result = int;
 
 class Point {
-  x: f64;
-  y: f64;
+  x: f64 = 0;
+  y: f64 = 0;
 }
 
 function main(): Result {
@@ -27,3 +29,5 @@ function after(x: i32): i32 {
 function norm2(point: Point): f64 {
   return point.x * point.x + point.y * point.y;
 }
+
+main();

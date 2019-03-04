@@ -86,6 +86,10 @@ class CppGenWalker extends GenWalker {
         write(std.get(id.text) || id.text);
         break;
       }
+      case ts.SyntaxKind.ImportDeclaration: {
+        // Skip these on gen for now.
+        break;
+      }
       case ts.SyntaxKind.NumericLiteral: {
         let num = node as ts.NumericLiteral;
         write(`${num.text}`);
@@ -177,7 +181,20 @@ class CppGenWalker extends GenWalker {
         break;
       }
       case ts.SyntaxKind.SourceFile: {
-        ts.forEachChild(node, walk);
+        ts.forEachChild(node, kid => {
+          switch (kid.kind) {
+            case ts.SyntaxKind.ExpressionStatement:
+            case ts.SyntaxKind.ReturnStatement:
+            case ts.SyntaxKind.VariableStatement: {
+              // For now, exclude top-level statements.
+              break;
+            }
+            default: {
+              walk(kid);
+              break;
+            }
+          }
+        });
         this.endSourceFile();
         break;
       }
