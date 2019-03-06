@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
+    "baseUrl": "node_modules",
     "module": "CommonJS",
     "outDir": "dist",
+    "paths": {"ryo": ["../src/ryo.ts"]},
     "sourceMap": true,
     "strict": true,
     "target": "es2015",

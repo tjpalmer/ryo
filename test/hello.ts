@@ -1,4 +1,4 @@
-import {f64, i32, int, trace} from "../src/ryo";
+import {f64, i32, int, trace} from "ryo";
 
 type Result = int;
 
@@ -16,8 +16,9 @@ function main(): Result {
   let point: Point = {x: 4, y};
   // Way to embed an object literal as an expression with out of order properties.
   // Of course, if we are sure about no side effects, we can reorder operations.
-  // let point: Point = {y: something(), x: other};
-  // const Point point = ([]() {double y = 2; double x = y + 1; return Point {x, y};})();
+  // let point: Point = {y: something(), x: other()};
+  // const Point point = ([](){double y = something(); double x = other(); return Point {x, y};})();
+  // const Point point = ([](){double y = something(); return Point {other(), y};})();
   trace(norm2(point));
   return 0;
 }
