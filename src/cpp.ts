@@ -90,6 +90,10 @@ class CppGenWalker extends GenWalker {
         // Skip these on gen for now.
         break;
       }
+      case ts.SyntaxKind.NumberKeyword: {
+        write('double');
+        break;
+      }
       case ts.SyntaxKind.NumericLiteral: {
         let num = node as ts.NumericLiteral;
         write(`${num.text}`);
