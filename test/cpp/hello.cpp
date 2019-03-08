@@ -30,7 +30,7 @@ Result main() {
 }
 
 ::std::int32_t after(const ::std::int32_t x) {
-  return x + 1;
+  return ::std::int32_t(x + 1);
 }
 
 double norm2(const Point point) {

@@ -15,6 +15,10 @@ export type u16 = number;
 export type u32 = number;
 export type u64 = number;
 
+export function i32(x: number): i32 {
+  return x | 0;
+}
+
 export function trace(message: any): void {
   console.log(message);
 }

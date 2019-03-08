@@ -1,4 +1,4 @@
-import {f64, i32, int, trace} from "ryo";
+import {f64, i32, int, trace} from 'ryo';
 
 type Result = int;
 
@@ -24,7 +24,7 @@ function main(): Result {
 }
 
 function after(x: i32): i32 {
-  return x + 1;
+  return i32(x + 1);
 }
 
 function norm2(point: Point): f64 {
