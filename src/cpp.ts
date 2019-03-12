@@ -136,6 +136,22 @@ class CppGenWalker extends GenWalker {
           write('const ');
           if (decl.type) {
             walk(decl.type);
+            let entity = this.gen.program.entities.get(decl.type);
+            // console.log(decl.type);
+            // console.log(entity);
+            if (entity && entity.def && entity.def.node) {
+              switch (entity.def.node.kind) {
+                case ts.SyntaxKind.ClassDeclaration: {
+                  if (node.kind == ts.SyntaxKind.Parameter) {
+                    write('&');
+                  }
+                  break;
+                }
+                default: {
+                  // Ignore for now.
+                }
+              }
+            }
           } else {
             write('auto');
           }

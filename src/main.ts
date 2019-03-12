@@ -37,7 +37,7 @@ function main() {
   let outFile = fs.openSync(out, 'w');
   try {
     let write = (text: string) => fs.writeSync(outFile, text);
-    mod.generate({sourceNode, write});
+    mod.generate({program, sourceNode, write});
   } finally {
     fs.closeSync(outFile);
   }

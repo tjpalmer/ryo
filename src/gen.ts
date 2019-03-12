@@ -1,6 +1,8 @@
 import * as ts from 'typescript';
+import {Program} from './resolve';
 
 export interface Gen {
+  program: Program;
   sourceNode: ts.SourceFile;
   write: (text: string) => void;
 }

@@ -19,6 +19,7 @@ export function i32(x: number): i32 {
   return x | 0;
 }
 
+// TODO Instead compile `console.log` itself to something else in c++.
 export function trace(message: any): void {
   console.log(message);
 }

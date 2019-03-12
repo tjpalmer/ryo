@@ -11,7 +11,7 @@ struct Point;
 
 Result main();
 ::std::int32_t after(const ::std::int32_t x);
-double norm2(const Point point);
+double norm2(const Point& point);
 
 struct Point {
   float x;
@@ -33,7 +33,7 @@ Result main() {
   return ::std::int32_t(x + 1);
 }
 
-double norm2(const Point point) {
+double norm2(const Point& point) {
   return point.x * point.x + point.y * point.y;
 }
 

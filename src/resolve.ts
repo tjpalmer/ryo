@@ -6,6 +6,8 @@ export interface Program {
   // Definitions of entities, whether types or values.
   defs: Map<ts.Node, Entity>;
 
+  entities: Map<ts.Node, Entity>;
+
   global: Scope;
 
   // Types of entities, especially important for composite expressions.
@@ -16,17 +18,22 @@ export interface Program {
 export interface Scope {
   kids: Scope[];
   parent?: Scope;
-  refs: Entity[];
+  refs: Ref[];
   // Two different namespaces, where classes end up in both.
   types: {[name: string]: Entity};
   values: {[name: string]: Value};
 }
 
 export interface Entity {
+  def?: Entity;
   isType?: boolean;
   isValue?: boolean;
   name?: string;
   node?: ts.Node;
+}
+
+export interface Ref extends Entity {
+  def: Entity | undefined;
 }
 
 // export interface Type extends Entity {}
@@ -38,36 +45,42 @@ export interface Value extends Entity {
 export function resolve(node: ts.SourceFile): Program {
   let program: Program = {
     defs: new Map(),
+    entities: new Map(),
+    // TODO No new globals?? Still need console, probably.
     global: {
       kids: [],
       refs: [],
       types: {
-        f32: {name: 'f32'},
-        f64: {name: 'f64'},
-        i8: {name: 'i8'},
-        i16: {name: 'i16'},
-        i32: {name: 'i32'},
-        i64: {name: 'i64'},
-        int: {name: 'int'},
-        u8: {name: 'u8'},
-        u16: {name: 'u16'},
-        u32: {name: 'u32'},
-        u64: {name: 'u64'},
-        string: {name: 'string'},
-        void: {name: 'void'},
+        // f32: {name: 'f32'},
+        // f64: {name: 'f64'},
+        // i8: {name: 'i8'},
+        // i16: {name: 'i16'},
+        // i32: {name: 'i32'},
+        // i64: {name: 'i64'},
+        // int: {name: 'int'},
+        // u8: {name: 'u8'},
+        // u16: {name: 'u16'},
+        // u32: {name: 'u32'},
+        // u64: {name: 'u64'},
+        // string: {name: 'string'},
+        // void: {name: 'void'},
       },
       values: {
-        trace: {name: 'trace', type: {
-          // TODO Plan how to describe function types.
-        }},
+        // i32: {name: 'i32', type: {
+        //   // TODO Plan how to describe function types.
+        // }},
+        // trace: {name: 'trace', type: {
+        //   // TODO Plan how to describe function types.
+        // }},
       },
     },
     types: new Map(),
   };
-  let walker = new DefWalker({program});
+  let defWalker = new DefWalker({program});
   // TODO Save finished empty scopes for reuse to avoid useless allocation.
   // TODO Would just need to change out the parent.
-  walker.walk(node, makeScope(program.global));
+  defWalker.walk(node, makeScope(program.global));
+  new RefWalker().walk(program.global);
   return program;
 }
 
@@ -89,6 +102,13 @@ class DefWalker {
         let block = node as ts.Block;
         let parent = makeScope(scope);
         block.statements.forEach(kid => this.walk(kid, parent));
+        break;
+      }
+      case ts.SyntaxKind.ClassDeclaration: {
+        let decl = node as ts.ClassDeclaration;
+        this.putDef(scope, {
+          isType: true, isValue: true, name: decl.name!.text, node,
+        });
         break;
       }
       case ts.SyntaxKind.EndOfFileToken:
@@ -119,6 +139,9 @@ class DefWalker {
                 isValue: true, name: name.text, node: param,
               });
             }
+            if (param.type) {
+              walk(param.type);
+            }
           });
         }
         // let type: Entity | undefined = undefined;
@@ -140,9 +163,27 @@ class DefWalker {
         let id = node as ts.Identifier;
         // Type references should be handled elsewhere, so these should be
         // value references.
-        scope.refs.push({isValue: true, name: id.text, node});
+        this.putRef(scope, {
+          def: undefined, isValue: true, name: id.text, node,
+        });
         break;
       }
+      case ts.SyntaxKind.ImportSpecifier: {
+        let spec = node as ts.ImportSpecifier;
+        // TODO Track imports in a separate collection?
+        // TODO Track propertyName there, too.
+        this.putDef(scope, {
+          // Claim both type and value, but we don't actually know without
+          // inspection.
+          // TypeScript knows how to make the distinction.
+          isType: true, isValue: true, name: spec.name.text, node,
+        });
+        break;
+      }
+      // case ts.SyntaxKind.PropertyAccessExpression: {
+      //   // TODO Change the scope to that of the object being accessed.
+      //   break;
+      // }
       case ts.SyntaxKind.TypeAliasDeclaration: {
         let decl = node as ts.TypeAliasDeclaration;
         // TODO Walk to define members for inline struct definitions?
@@ -154,7 +195,9 @@ class DefWalker {
         let ref = node as ts.TypeReferenceNode;
         // TODO QualifiedName support.
         let name = ref.typeName as ts.Identifier;
-        scope.refs.push({isType: true, name: name.text, node});
+        this.putRef(scope, {
+          def: undefined, isType: true, name: name.text, node,
+        });
         break;
       }
       case ts.SyntaxKind.VariableStatement: {
@@ -181,6 +224,9 @@ class DefWalker {
           case ts.SyntaxKind.BinaryExpression:
           case ts.SyntaxKind.CallExpression:
           case ts.SyntaxKind.ExpressionStatement:
+          case ts.SyntaxKind.ImportClause:
+          case ts.SyntaxKind.ImportDeclaration:
+          case ts.SyntaxKind.NamedImports:
           case ts.SyntaxKind.PrefixUnaryExpression:
           case ts.SyntaxKind.ReturnStatement:
           case ts.SyntaxKind.SourceFile: {
@@ -203,10 +249,16 @@ class DefWalker {
 
   putDef(scope: Scope, entity: Entity | Value) {
     this.program.defs.set(entity.node!, entity);
-    this.putScope(scope, entity);
+    this.program.entities.set(entity.node!, entity);
+    this.putInScope(scope, entity);
   }
 
-  putScope(scope: Scope, entity: Entity) {
+  putRef(scope: Scope, ref: Ref) {
+    this.program.entities.set(ref.node!, ref);
+    scope.refs.push(ref);
+  }
+
+  putInScope(scope: Scope, entity: Entity) {
     if (entity.isType) {
       scope.types[entity.name!] = entity;
     }
@@ -217,9 +269,52 @@ class DefWalker {
 
   putType(scope: Scope, entity: Entity) {
     this.program.types.set(entity.node!, entity);
-    this.putScope(scope, entity);
+    this.putInScope(scope, entity);
   }
 
+}
+
+class RefWalker {
+
+  walk(scope: Scope) {
+    scope.refs.forEach(ref => {
+      findDef(scope, ref);
+    });
+    scope.kids.forEach(kid => {
+      this.walk(kid);
+    });
+  }
+
+}
+
+function findDef(scope: Scope, ref: Ref) {
+  // Branch once up front instead of at each recursion.
+  let def = ref.isType ? findDefType(scope, ref) : findDefValue(scope, ref);
+  ref.def = def;
+  // console.log(ref);
+  return def;
+}
+
+function findDefType(scope: Scope, ref: Ref): Entity | undefined {
+  let def = scope.types[ref.name!];
+  if (def) {
+    return def;
+  } else if (scope.parent) {
+    return findDefType(scope.parent, ref);
+  } else {
+    return undefined;
+  }
+}
+
+function findDefValue(scope: Scope, ref: Ref): Entity | undefined {
+  let def = scope.values[ref.name!];
+  if (def) {
+    return def;
+  } else if (scope.parent) {
+    return findDefValue(scope.parent, ref);
+  } else {
+    return undefined;
+  }
 }
 
 function makeScope(parent: Scope) {
