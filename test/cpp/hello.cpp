@@ -14,8 +14,8 @@ Result main();
 double norm2(const Point& point);
 
 struct Point {
-  float x;
-  float y;
+  float x = 0;
+  float y = 0;
 };
 
 Result main() {

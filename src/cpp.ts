@@ -186,7 +186,13 @@ class CppGenWalker extends GenWalker {
         let name = decl.name as ts.Identifier;
         this.indent();
         walk(decl.type!);
-        write(` ${name.text};\n`);
+        write(` ${name.text}`);
+        if (decl.initializer) {
+          // TODO Braced initializer ever????
+          write(' = ');
+          walk(decl.initializer);
+        }
+        write(';\n');
         break;
       }
       case ts.SyntaxKind.ReturnStatement: {
