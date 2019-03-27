@@ -59,7 +59,12 @@ class CppGenWalker extends GenWalker {
         let call = node as ts.CallExpression;
         this.walk(call.expression);
         write('(');
-        call.arguments.forEach(walk);
+        call.arguments.forEach((arg, index) => {
+          if (index) {
+            write(', ');
+          }
+          walk(arg);
+        });
         write(')');
         break;
       }
@@ -177,6 +182,8 @@ class CppGenWalker extends GenWalker {
       }
       case ts.SyntaxKind.PropertyAccessExpression: {
         let access = node as ts.PropertyAccessExpression;
+        // let symbol = this.gen.checker.getSymbolAtLocation(node);
+        // console.log('symbol', symbol);
         walk(access.expression);
         write(`.${access.name.text}`);
         break;

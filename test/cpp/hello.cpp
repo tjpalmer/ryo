@@ -11,29 +11,29 @@ struct Point;
 
 Result main();
 ::std::int32_t after(const ::std::int32_t x);
-double norm2(const Point& point);
+float norm2(const Point& point);
 
 struct Point {
-  float x = 0;
-  float y = 0;
+  float x = float(0);
+  float y = float(0);
 };
 
 Result main() {
-  const ::std::int32_t x = 3;
-  const auto y = -3.5;
+  const auto x = ::std::int32_t(3);
+  const auto y = float(-3.5);
   ryo_trace("Hello!");
   ryo_trace(after(x));
-  ryo_trace(after(y));
-  const Point point = {4, y};
+  ryo_trace(after(::std::int32_t(y)));
+  const Point point = {float(4), y};
   ryo_trace(norm2(point));
-  return 0;
+  return int(0);
 }
 
 ::std::int32_t after(const ::std::int32_t x) {
-  return ::std::int32_t(x + 1);
+  return ::std::int32_t.add(x, ::std::int32_t(1));
 }
 
-double norm2(const Point& point) {
-  return point.x * point.x + point.y * point.y;
+float norm2(const Point& point) {
+  return float.add(float.mul(point.x, point.x), float.mul(point.y, point.y));
 }
 

@@ -3,32 +3,33 @@ import {f32, i32, int, trace} from 'ryo';
 type Result = int;
 
 class Point {
-  x: f32 = 0;
-  y: f32 = 0;
+  // TODO Remove the need for explicit types here.
+  x: f32 = f32(0);
+  y: f32 = f32(0);
 }
 
 function main(): Result {
-  let x: i32 = 3;
-  let y = -3.5;
+  let x = i32(3);
+  let y = f32(-3.5);
   trace('Hello!');
   trace(after(x));
-  trace(after(y));
-  let point: Point = {x: 4, y};
+  trace(after(i32(y)));
+  let point: Point = {x: f32(4), y};
   // Way to embed an object literal as an expression with out of order properties.
   // Of course, if we are sure about no side effects, we can reorder operations.
   // let point: Point = {y: something(), x: other()};
-  // const Point point = ([](){double y = something(); double x = other(); return Point {x, y};})();
-  // const Point point = ([](){double y = something(); return Point {other(), y};})();
+  // const Point point = ([](){float y = something(); float x = other(); return Point {x, y};})();
+  // const Point point = ([](){float y = something(); return Point {other(), y};})();
   trace(norm2(point));
-  return 0;
+  return int(0);
 }
 
-function after(x: i32): i32 {
-  return i32(x + 1);
+function after(x: i32): i32 { // TODO No need for explicit return type!
+  return i32.add(x, i32(1));
 }
 
-function norm2(point: Point): number {
-  return point.x * point.x + point.y * point.y;
+function norm2(point: Point): f32 { // TODO No need for explicit return type!
+  return f32.add(f32.mul(point.x, point.x), f32.mul(point.y, point.y));
 }
 
 main();
