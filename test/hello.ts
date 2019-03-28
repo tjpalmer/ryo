@@ -1,4 +1,4 @@
-import {f32, i32, int, trace} from 'ryo';
+import {f32, i32, int, own, trace} from 'ryo';
 
 type Result = int;
 
@@ -21,12 +21,16 @@ function main(): Result {
   // const Point point = ([](){float y = something(); float x = other(); return Point {x, y};})();
   // const Point point = ([](){float y = something(); return Point {other(), y};})();
   trace(norm2(point));
+  // let p2 = own({x: f32(4), y} as Point);
+  // handOff(give(point));
   return int(0);
 }
 
 function after(x: i32): i32 { // TODO No need for explicit return type!
   return i32.add(x, i32(1));
 }
+
+// function handOff(point: take<Point>) {}
 
 function norm2(point: Point): f32 { // TODO No need for explicit return type!
   return f32.add(f32.mul(point.x, point.x), f32.mul(point.y, point.y));
